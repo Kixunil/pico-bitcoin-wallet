@@ -110,6 +110,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "either"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
+
+[[package]]
 name = "electrs-bitcoincore-rpc"
 version = "0.17.0-e3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -250,6 +256,7 @@ dependencies = [
  "bip21",
  "bitcoin",
  "dirs",
+ "either",
  "electrs-bitcoincore-rpc",
  "rand",
  "rusqlite",

@@ -17,3 +17,4 @@ anyhow = "1.0.70"
 serde = { version = "1.0.156", features = ["derive"] }
 toml = "0.5.11"
 rand = "0.8.5"
+either = "1.8.1"

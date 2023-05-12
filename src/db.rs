@@ -1,6 +1,39 @@
+use std::path::PathBuf;
+
 use rusqlite::{Connection, ToSql};
-use anyhow::{Result, anyhow, Context};
+use anyhow::{anyhow, Result, Context};
 use core::convert::TryInto;
+
+/// Gets the path to the database file, creating the project data directory if needed.
+///
+/// E.g., On Ubuntu: ~/.local/share/pico-bitcoin-wallet/data.db
+pub fn database_file() -> Result<PathBuf> {
+    const DATABASE: &str = "data.db";
+
+    let data_dir = data_dir()?;
+    Ok(data_dir.join(DATABASE))
+}
+
+/// Gets the path to the private key file, creating the project data directory if needed.
+///
+/// E.g., On Ubuntu: ~/.local/share/pico-bitcoin-wallet/private.key
+pub fn private_key_file() -> Result<PathBuf> {
+    const PRIVATE_KEY_FILE: &str = "private.key";
+
+    let data_dir = data_dir()?;
+    Ok(data_dir.join(PRIVATE_KEY_FILE))
+}
+
+/// Gets the path to the data directory.
+///
+/// If the project data directory does not exist, attempts to create it.
+pub fn data_dir() -> Result<PathBuf> {
+    let dir = dirs::data_dir().ok_or(anyhow!("the user data directory was not identified"))?;
+    // If you change this directory then you'll likely want to change it in `config.rs` also.
+    let dir = dir.join("pico-bitcoin-wallet");
+    std::fs::create_dir_all(&dir).with_context(|| format!("failed to create data dir at {}", dir.display()))?;
+    Ok(dir)
+}
 
 const CREATE_TABLES: &str = r#"
 BEGIN;
@@ -14,9 +47,7 @@ pub struct Db(Connection);
 
 impl Db {
     pub fn open() -> Result<Self> {
-        let data_dir = dirs::data_dir().ok_or(anyhow!("The user data directory was not identified"))?.join("pico-bitcoin-wallet");
-        std::fs::create_dir_all(&data_dir).with_context(|| format!("Failed to create data dir at {}", data_dir.display()))?;
-        let path = data_dir.join("data.db");
+        let path = database_file()?;
         let connection = Connection::open(&path).with_context(|| format!("failed to open database at {}", path.display()))?;
         connection.execute_batch(CREATE_TABLES).context("failed to prepare the database tables")?;
         Ok(Db(connection))

@@ -25,10 +25,11 @@ fn scan() -> Result<()> {
 
     let conf = config::load()?;
     let connection = bitcoincore_rpc::Client::new(&conf.bitcoind_uri, conf.bitcoind_auth).context("failed to connect to bitcoind")?;
-    let current_height = connection.get_block_count().context("Failed to get block count")?;
+    let current_height: u64 = todo!();
     let mut db = db::Db::open()?;
     let last_height = db.get_last_height()?;
-    let script_pubkey = get_address()?.script_pubkey();
+    let address = get_address()?;
+    let script_pubkey: bitcoin::ScriptBuf = todo!();
     // we need to move txid below but not `script_pubkey`
     let script_pubkey = &script_pubkey;
     let mut block_count = 0;
@@ -36,10 +37,7 @@ fn scan() -> Result<()> {
     let mut txos = 0;
     let mut total_amount = 0;
     let txos_iter = ((last_height + 1)..=current_height).flat_map(|height| {
-        let block = connection.get_block_hash(height).context("Failed to get block hash")
-            .and_then(|block_hash| {
-                connection.get_block(&block_hash).context("Failed to get block hash")
-            });
+        let block: Result<bitcoin::Block> = todo!();
         match block {
             Ok(block) => {
                 block_count += 1;
@@ -52,7 +50,7 @@ fn scan() -> Result<()> {
         match transaction {
             Ok(transaction) => {
                 tx_count += 1;
-                let txid = transaction.txid();
+                let txid: bitcoin::Txid = todo!();
                 let iter = transaction
                     .output
                     .into_iter()
@@ -85,8 +83,8 @@ fn scan() -> Result<()> {
 
 fn get_address() -> Result<Address> {
     let private_key = load_private_key()?;
-    let pub_key = private_key.inner.x_only_public_key(&**secp256k1::SECP256K1).0;
-    Ok(Address::p2tr(&secp256k1::SECP256K1, pub_key, None, Network::Regtest))
+    let x_only_pub_key = todo!();
+    Ok(todo!()) // p2tr address
 }
 
 fn address() -> Result<()> {
@@ -101,19 +99,15 @@ fn send(mut args: std::env::Args) -> Result<()> {
     let conf = config::load()?;
     let mut db = db::Db::open()?;
     let connection = bitcoincore_rpc::Client::new(&conf.bitcoind_uri, conf.bitcoind_auth).context("failed to connect to bitcoind")?;
-    let address = args.next().ok_or_else(|| anyhow!("Missing address"))?
-        .parse::<Address<_>>()
-        .context("Invalid bitcoin address")?
-        .require_network(Network::Regtest)
-        .context("Invalid bitcoin address")?;
-    let amount = args.next().ok_or_else(|| anyhow!("Missing amount"))?
-        .parse::<Amount>()
-        .context("Invalid amount")?;
+    let address: Address = todo!();
+    let amount: Amount = todo!();
 
-    let payee_script_pubkey = address.script_pubkey();
+    let payee_script_pubkey: bitcoin::ScriptBuf = todo!();
     let private_key = load_private_key()?;
-    let key_pair = secp256k1::KeyPair::from_secret_key(secp256k1::SECP256K1, &private_key.inner).tap_tweak(secp256k1::SECP256K1, None).to_inner();
-    let script_pubkey = get_address()?.script_pubkey();
+    // note: needs to be tweaked for p2tr.
+    let key_pair: secp256k1::KeyPair = todo!();
+    let recv_address = get_address()?;
+    let script_pubkey: bitcoin::ScriptBuf = todo!();
     let mut txins = Vec::new();
     let mut prevouts = Vec::new();
     for result in db.iter_unspent()?.iter()? {
@@ -152,11 +146,11 @@ fn send(mut args: std::env::Args) -> Result<()> {
     let prevouts = bitcoin::psbt::Prevouts::All(&prevouts);
     let mut cache = bitcoin::sighash::SighashCache::new(&mut transaction);
     for i in 0..cache.transaction().input.len() {
-        let hash = cache.taproot_key_spend_signature_hash(i, &prevouts, bitcoin::sighash::TapSighashType::Default).unwrap();
-        let signature = secp256k1::SECP256K1.sign_schnorr(&hash.into(), &key_pair);
+        let spend_signature_hash: bitcoin::sighash::TapSighash = todo!();
+        let signature: secp256k1::schnorr::Signature = todo!();
         *cache.witness_mut(i).unwrap() = Witness::from_slice(&[signature.as_ref()]);
     }
-    connection.send_raw_transaction(&transaction).context("failed to broadcast transaction")?;
+    todo!("broadcast transaction");
     for input in transaction.input {
         db.set_spent(&input.previous_output)?;
     }

@@ -149,7 +149,7 @@ fn send(mut args: std::env::Args) -> Result<()> {
         input: txins,
         output: vec![payment, change],
     };
-    let prevouts = bitcoin::psbt::Prevouts::All(&prevouts);
+    let prevouts = bitcoin::sighash::Prevouts::All(&prevouts);
     let mut cache = bitcoin::sighash::SighashCache::new(&mut transaction);
     for i in 0..cache.transaction().input.len() {
         let hash = cache.taproot_key_spend_signature_hash(i, &prevouts, bitcoin::sighash::TapSighashType::Default).unwrap();
